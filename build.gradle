@@ -1,0 +1,19 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'idea'
+
+version = '1.0'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        url "http://cobra.cs.uni-duesseldorf.de/artifactory/libs-snapshot-local"
+    }
+}
+
+dependencies {
+    //testCompile group: 'junit', name: 'junit', version: '4.11'
+    //compile group: 'org.hibernate', name: 'hibernate-core', version: '3.6.7.Final'
+    compile group: 'org.coreasm', name: 'org.coreasm.engine', version: '1.6.5-SNAPSHOT'
+}
