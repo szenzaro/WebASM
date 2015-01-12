@@ -1,0 +1,14 @@
+.cm-s-webasm { height: 500px; border: solid black 1px; }
+.cm-s-webasm span.cm-number, .cm-s-webasm span.cm-string, .cm-s-webasm span.cm-atom {color: #762;}
+.cm-s-webasm span.cm-comment {color: #262; font-style: italic; line-height: 1em;}
+.cm-s-webasm span.cm-meta {color: #555; font-style: italic; line-height: 1em;}
+.cm-s-webasm span.cm-variable {color: black;}
+.cm-s-webasm span.cm-variable-2 {color: #b11;}
+.cm-s-webasm span.cm-qualifier {color: #555;}
+.cm-s-webasm span.cm-keyword {color: #730;}
+.cm-s-webasm span.cm-builtin {color: #30a;}
+.cm-s-webasm span.cm-link {color: #762;}
+.cm-s-webasm span.cm-error {background-color: #fdd;}
+
+.cm-s-webasm .CodeMirror-activeline-background {background: #e8f2ff !important;}
+.cm-s-webasm .CodeMirror-matchingbracket {outline:1px solid grey; color:black !important;}

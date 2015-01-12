@@ -1,0 +1,79 @@
+CoreASM ExtremaFinding
+
+use Standard
+use TabBlocks
+use SchedulingPolicies
+
+//All processes are synchronized
+option SchedulingPolicies.policy allfirst
+
+enum STATES = {ACTIVE, INACTIVE}
+
+
+function mode : Agents -> STATES
+function rightMsg : Agents -> NUMBER
+function leftMsg : Agents -> NUMBER
+function id : Agents -> NUMBER
+function isLargest: Agents -> BOOLEAN
+function notified : Agents -> BOOLEAN
+
+function pos : Agents -> NUMBER
+
+derived N = 4
+derived processes = {a | a in Agents with pos(a) != undef}
+derived l(p) = pick proc in processes with pos(proc) = (pos(p)-1+N) % N
+derived r(p) = pick proc in processes with pos(proc) = (pos(p)+1) % N
+derived largerMsgReceived = rightMsg(self) > id(self) or leftMsg(self) > id(self)
+derived myMsgReceived  = rightMsg(self) = id(self) or leftMsg(self) = id(self)
+
+init InitiateState
+
+rule ExtremaFinding = 
+
+	//Each process p will execute this rule with p=self. 
+	//The forall synchronization will be implemented by 
+	//the CoreASM scheduling policy "allfirst".
+	
+	if mode(self) = ACTIVE then
+		if not isLargest(self) then
+			rightMsg(l(self)) := id(self)
+			leftMsg(r(self)) := id(self)
+		if largerMsgReceived then
+			mode(self) := INACTIVE
+		if myMsgReceived  then
+			isLargest(self):=true
+			notified(r(self)) := true
+
+	if mode(self) = INACTIVE then
+		if notified(self) then
+			notified(r(self)) := true 
+		else
+			PassMsgs
+
+	if isLargest(self) and notified(self) then
+		print "Extrema found!!!"
+		StopASM
+
+rule PassMsgs = 
+		rightMsg(l(self)) := rightMsg(self)
+		leftMsg(r(self)) := leftMsg(self)
+
+rule StopASM =
+	forall m in Agents do
+		program(m) := undef
+		
+rule InitiateState =
+	//We will employ n,m to generate pairwise different integer numbers used 
+	//as ids (for each process p) to implement the < relation.
+	choose m in {11,13,17} do
+		forall i in [0..(N-1)] do
+			extend Agents with p do	
+				program(p) := @ExtremaFinding
+				pos(p) := i
+				id(p) := (i*113) % m
+				mode(p) := ACTIVE
+				notified(p) := false
+				isLargest(p) :=false
+				rightMsg(p) := undef
+				leftMsg(p) := undef
+	program(self):=undef

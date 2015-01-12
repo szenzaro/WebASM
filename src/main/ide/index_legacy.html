@@ -1,0 +1,531 @@
+<!DOCTYPE html >
+<html>
+<head>
+<title> WebASM - ExtremaFinding </title>
+<link rel="stylesheet" href="lib/codemirror.css">
+<link rel="stylesheet" href="theme/eclipse.css">
+<link rel="stylesheet" href="theme/blackboard.css">
+<link rel="stylesheet" href="webasm.css">
+<script src="lib/codemirror.js"></script>
+<script src="mode/javascript/javascript.js"></script>
+<script src="mode/coreasm/coreasm.js"></script>
+<style>
+
+*{
+	font-family: sans-serif;
+	margin: 0;
+}
+
+body{
+	background-color: #eeeeee;
+}
+
+#logconsole{
+	width: 400px;
+	height: 480px; 
+	visibility: block;
+}
+
+#specification{
+	background-color: #ffffff;
+	width: 600px;
+	height: 480px;
+	padding: 10px;
+	border: solid 2px #cccccc;
+	border-radius: 15px;
+	box-shadow: 4px 8px 4px rgba(0, 0, 0, 0.5);
+	margin-left: 20px;
+}
+
+#agentsDiv{
+	padding-left: 50px;
+	border: solid 1px;
+	background-color: #ffffff;
+	width: 42%;
+	height: 500px;
+	margin-left: 12px;
+	float: left;
+	position: relative;
+}
+
+.header h1 {text-align: center; }
+
+.commandbar{
+	width: 100%;
+	background-color:#6e6e6e;
+	padding: 10px;
+	padding-bottom: 5px;
+	text-align: center;
+	margin-bottom: 30px;
+}
+
+.agent{
+	width: 128px;
+	border: solid 3px #cccccc;
+	float: left;
+	border-radius: 20px;
+	background-color: white;
+	position: absolute;
+	z-index: 1;
+	display: block;
+	margin-top: 30px;
+}
+
+.active{
+	border: solid 3px #00ff00;
+}
+
+.inactive{
+	border: solid 3px #ff0000;
+}
+
+.notified{
+	background-color: #cccccc;
+}
+
+.largest{
+	border-style: dotted;
+}
+.id{
+	float: left;
+	width: 128px;
+	text-align: center;
+	padding-top: 5px;
+	padding-bottom: 5ipx;
+	border-bottom: solid 2px black;
+	font-size: 22px;
+}
+
+ 
+.msg{
+	width: 62px;
+	height: 22px;
+	float: left;
+	text-align: center;
+	padding-top: 5px;
+}
+
+
+.right{
+	border-top-right-radius: 15px;
+	border-bottom-right-radius: 15px;
+	border-left: solid 1px #000000;
+}
+
+.left{
+	border-top-left-radius: 15px;
+	border-bottom-left-radius: 15px;
+	border-right: solid 1px #000000;
+}
+
+.arrow{
+	border: solid 1px black;
+	border-radius: 300px;
+	width: 300px;
+	height: 300px;
+	position: absolute;
+	margin-top: 30px;
+}
+
+.logo {
+	width: 64px;
+	float: left;
+	margin-left: 16px;
+	margin-right: 32px;
+}
+
+.header h1{
+	padding-top: 15px;
+}
+
+.button{
+	background-image: -moz-linear-gradient(top, #ffffff, #dbdbdb);
+	background-image: -webkit-gradient(linear,left top,left bottom, color-stop(0, #ffffff),color-stop(1, #dbdbdb));
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorStr='#ffffff', EndColorStr='#dbdbdb');
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorStr='#ffffff', EndColorStr='#dbdbdb')";
+	border: 1px solid #fff;
+	border-radius: 18px;
+	padding: 5px 15px;
+	text-decoration: none;
+	text-shadow: #fff 0 1px 0;
+	margin-right: 5px;
+	margin-bottom: 5px;
+	color: #000000;
+	line-height: 24px;
+	font-size: 10px;
+	font-weight: bold;     
+}
+
+.button:hover{
+	cursor: pointer;
+	color: #597390;
+
+	background-image: -moz-linear-gradient(top, #ffffff, #eeeeee);
+	background-image: -webkit-gradient(linear,left top,left bottom,
+   	color-stop(0, #ffffff),color-stop(1, #eeeeee));
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorStr='#ffffff', EndColorStr='#eeeeee');
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorStr='#ffffff', EndColorStr='#eeeeee')";
+}
+
+.explanation{
+	display: block;
+	width: 32px;
+	height: 32px;
+}
+
+.legend{
+	display: none;
+	width:20%;
+	float: left;
+	padding-left: 100px;
+}
+</style>
+<body>
+
+
+<div class="header">
+	<!--img class="logo" src="img/logo.png" /-->
+	<h1>WebASM - ExtremaFinding Specification</h1><br/>
+</div> 
+
+
+<div class="content">
+
+<div class="commandbar">
+	<input class="button" type="file" id="fileInput">
+	<input class="button" type="button" onclick="init()" value="Init">
+	<input class="button" type="button" onclick="doStep()" value="Step">
+	<input class="button" type="button" onclick="run()" value="Run">
+	<input class="button" type="button" onclick="doStep()" value="Stop">
+</div>
+
+
+<div id="agentsDiv">
+
+</div>
+
+
+
+
+	<textarea id="specification">
+CoreASM ExtremaFinding
+
+use Standard
+use TabBlocks
+use SchedulingPolicies
+
+//All processes are synchronized
+option SchedulingPolicies.policy allfirst
+
+enum STATES = {ACTIVE, INACTIVE}
+
+
+function mode : Agents -> STATES
+function rightMsg : Agents -> NUMBER
+function leftMsg : Agents -> NUMBER
+function id : Agents -> NUMBER
+function isLargest: Agents -> BOOLEAN
+function notified : Agents -> BOOLEAN
+
+function pos : Agents -> NUMBER
+
+derived N = 4
+derived processes = {a | a in Agents with pos(a) != undef}
+derived l(p) = pick proc in processes with pos(proc) = (pos(p)-1+N) % N
+derived r(p) = pick proc in processes with pos(proc) = (pos(p)+1) % N
+derived largerMsgReceived = rightMsg(self) > id(self) or leftMsg(self) > id(self)
+derived myMsgReceived  = rightMsg(self) = id(self) or leftMsg(self) = id(self)
+
+init InitiateState
+
+rule ExtremaFinding = 
+
+	//Each process p will execute this rule with p=self. 
+	//The forall synchronization will be implemented by 
+	//the CoreASM scheduling policy "allfirst".
+	
+	if mode(self) = ACTIVE then
+		if not isLargest(self) then
+			rightMsg(l(self)) := id(self)
+			leftMsg(r(self)) := id(self)
+		if largerMsgReceived then
+			mode(self) := INACTIVE
+		if myMsgReceived  then
+			isLargest(self):=true
+			notified(r(self)) := true
+
+	if mode(self) = INACTIVE then
+		if notified(self) then
+			notified(r(self)) := true 
+		else
+			PassMsgs
+
+	if isLargest(self) and notified(self) then
+		print "Extrema found!!!"
+		StopASM
+
+rule PassMsgs = 
+		rightMsg(l(self)) := rightMsg(self)
+		leftMsg(r(self)) := leftMsg(self)
+
+rule StopASM =
+	forall m in Agents do
+		program(m) := undef
+		
+rule InitiateState =
+	//We will employ n,m to generate pairwise different integer numbers used 
+	//as ids (for each process p) to implement the < relation.
+	choose m in {11,13,17} do
+		forall i in [0..(N-1)] do
+			extend Agents with p do	
+				program(p) := @ExtremaFinding
+				pos(p) := i
+				id(p) := (i*113) % m
+				mode(p) := ACTIVE
+				notified(p) := false
+				isLargest(p) :=false
+				rightMsg(p) := undef
+				leftMsg(p) := undef
+	program(self):=undef
+
+	</textarea>
+
+
+<script>
+var editor = document.getElementById("specification");
+var myCodeMirror = CodeMirror(function(elt) {
+ 				 editor.parentNode.replaceChild(elt, editor);
+				}, {	value: editor.value,
+					lineNumbers: true,
+					theme: "webasm",
+					mode: "coreasm"
+					});
+</script>
+
+<div style="clear: both"></div>
+	<embed id="app"
+		   type="application/x-java-applet;version=1.6"
+		   width="256" height="256"
+		   archive="../../../build/libs/WebASM-1.0.jar, /Users/johnnyfreak/.m2/repository/org/coreasm/org.coreasm.engine/1.6.5-SNAPSHOT/org.coreasm.engine-1.6.5-SNAPSHOT.jar, "
+		   code="org.coreasm.webasm.WebASM"
+		   pluginspage="http://java.com/download/" />
+</div>
+
+<div class="legend">
+		<label>Active</label><span class="explanation active"></span><br/>
+		<label>Inactive</label><span class="explanation inactive"></span>
+		<label>Notified</label><span  class="explanation notified"></span>
+		<label>Is Largest</label><span class="explanation largest"></span>
+</div>
+	<textarea id="logconsole"></textarea>
+<script type="text/javascript">
+
+var currentSpecification ="";
+var a = undefined;
+
+function doStep(){
+	//log(a.doStep());
+	a.doStep();
+	getAgents();
+}
+
+function run(){
+	a.doStep();
+	if(!isFinished(getAgents()))		
+		setTimeout(function() { run() } , 1000);
+}
+
+function getAgents(){
+	var univ = getUniverses();
+	var agentsDiv = document.getElementById("agentsDiv");
+	var props = {};
+	props["modes"] = getLocation("mode");
+	props["ids"] = getLocation("id");
+	props["rightMsgs"] = getLocation("rightMsg");
+	props["leftMsgs"] = getLocation("leftMsg");
+	props["pos"] = getLocation("pos");
+	props["isLargest"] = getLocation("isLargest");
+	props["notified"] = getLocation("notified");
+
+	var names = ["modes", "ids", "rightMsgs", "leftMsgs", "pos", "isLargest", "notified"];
+
+
+	while (agentsDiv.hasChildNodes()) {
+   	 agentsDiv.removeChild(agentsDiv.lastChild);
+	}
+
+	
+	var agents = new Array();
+	for(var i = 0; i<univ.Agents.length; i++){
+
+		if(univ.Agents[i] != "InitAgent"){			
+			var ag = new Agent(props,univ.Agents[i] , names);
+			agents[parseInt(ag.pos)] = ag;
+		}	
+
+	}
+
+
+	var angle = 2 * Math.PI / agents.length;
+	var alpha = 0;
+	//agentsDiv.style.height = "500px";
+
+	var px = agentsDiv.offsetWidth / 2;
+	var py = agentsDiv.offsetHeight / 2;
+
+	var arrow = document.createElement("div");
+	agentsDiv.appendChild(arrow);
+	arrow.className = "arrow";
+	arrow.style.top  = (py - arrow.offsetHeight/2 ) + "px";
+	arrow.style.left = (arrow.offsetWidth / 2) + "px";
+
+
+	for(var a = 0; a < agents.length; a++){
+		var ag = agents[a].getHTML();
+		ag.style.left = ((arrow.offsetWidth / 2)  * Math.cos(alpha) + px) - ag.offsetWidth / 2 + "px";
+		ag.style.top = ((arrow.offsetHeight / 2) * Math.sin(alpha) + py) - ag.offsetHeight / 2 + "px";
+
+		alpha += angle;
+		agentsDiv.appendChild(ag);
+	}
+
+	return agents;
+}
+
+function isFinished(agents){
+	for(var a = 0; a<agents.length; a++){
+		var ag = agents[a];
+		if(ag.notified=="false")  
+			return false;
+	}
+	return true;
+}
+
+function Agent(props,agentName, names){
+	this.id = props["ids"][agentName];
+	this.pos = props["pos"][agentName];
+	this.rightMsg = props["rightMsgs"][agentName];
+	this.leftMsg = props["leftMsgs"][agentName];
+	this.isLargest= props["isLargest"][agentName];
+	this.notified = props["notified"][agentName];
+	this.mode = props["modes"][agentName];
+
+	this.setNotified = function(val) { notified = val };
+
+	this.getHTML = function(){
+		var elem = document.createElement("div");
+		elem.className = "agent";
+		var divid = document.createElement("div");
+		divid.className = "id";
+		divid.innerHTML = "<span>" + this.id + "</span>";
+		agentsDiv.appendChild(elem);
+		
+		elem.className = "agent";
+		if(this.mode == "ACTIVE"){
+			elem.className = elem.className + " active";
+		}else{
+			elem.className = elem.className + " inactive";
+		}	
+	
+		if(this.notified == "true"){
+			elem.className =  elem.className + " notified";
+		}
+	
+		if(this.isLargest == "true"){
+			elem.className = elem.className + " largest"
+		}
+			
+
+		var rightMsgDiv = document.createElement("div");
+		rightMsgDiv.className = "msg right";
+		var rm = document.createElement("span");
+		rightMsgDiv.appendChild(rm);
+		if(this.rightMsg != undefined){
+			rm.innerHTML = this.rightMsg;
+		}
+
+		var leftMsgDiv = document.createElement("div");
+		leftMsgDiv.className = "msg left";
+		var lm = document.createElement("span");
+		leftMsgDiv.appendChild(lm);
+
+		if(this.leftMsg != undefined){
+					lm.innerHTML = this.leftMsg;
+					}
+
+		
+		elem.appendChild(divid);
+		elem.appendChild(leftMsgDiv);
+		elem.appendChild(rightMsgDiv);
+	/*	for(var j = 0; j< names.length ; j++){
+			var mode = document.createElement("span");
+			var prop = props[names[j]];
+			mode.innerHTML = prop[agentName]  + "<br/>"
+;
+			elem.appendChild(mode);
+
+		}*/
+		return elem;
+
+	};
+	return this;
+}
+
+function init(){
+	currentSpecification = myCodeMirror.getValue();
+
+
+	if(currentSpecification != ""){
+		a = document.getElementById("app");
+		log(a.createMachine());
+		log(a.initializeMachine());
+		log(a.loadSpecification(currentSpecification));
+		log(a.doStep());
+		getAgents();
+
+     	}
+}
+
+function getLocation(loc){
+	return JSON.parse(a.getLocationValues(loc));
+}
+
+function getUniverses(){
+	return JSON.parse(a.getUniverses());
+}
+
+window.onload = function() {
+
+		var fileInput = document.getElementById('fileInput');
+		var fileDisplayArea = document.getElementById('specification');
+
+
+		fileInput.addEventListener('change', function(e) {
+			var file = fileInput.files[0];
+
+			var reader = new FileReader();
+
+			reader.onload = function(e) {
+				var contents = e.target.result;
+				currentSpecification = contents;
+				fileDisplayArea.value = contents;      				
+			}
+
+			reader.readAsText(file);	
+			});
+
+}
+
+function log(s) {
+	var c = document.getElementById("logconsole");
+	c.value = c.value + s + "\n";
+}
+</script>
+</div>
+
+<div class="footer">
+
+</div>
+</body>
+</html>
+
