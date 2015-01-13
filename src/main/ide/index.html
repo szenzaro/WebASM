@@ -1,15 +1,145 @@
 <!DOCTYPE html>
 <html>
 <head lang="en">
-    <meta charset="UTF-8">
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>WebASM IDE</title>
+
+	<!-- Bootstrap -->
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+
+	<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+	<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+	<!--[if lt IE 9]>
+	<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+	<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+	<![endif]-->
+
+    <link rel="stylesheet" href="lib/codemirror.css">
+    <link rel="stylesheet" href="theme/eclipse.css">
+    <link rel="stylesheet" href="theme/blackboard.css">
+    <link rel="stylesheet" href="webasm.css">
+    <script src="lib/codemirror.js"></script>
+    <script src="mode/javascript/javascript.js"></script>
+    <script src="mode/coreasm/coreasm.js"></script>
     <title></title>
 </head>
 <body>
-    <embed id="app"
-           type="application/x-java-applet;version=1.6"
-           width="256" height="256"
-           archive="../../../build/libs/WebASM-1.0.jar, /Users/johnnyfreak/.m2/repository/org/coreasm/org.coreasm.engine/1.6.5-SNAPSHOT/org.coreasm.engine-1.6.5-SNAPSHOT.jar, "
-           code="org.coreasm.webasm.WebASM"
-           pluginspage="http://java.com/download/" />
+
+<div class="container">
+	<nav class="navbar navbar-default text-center">
+		<a class="glyphicon glyphicon-folder-open" href="#"></a>
+		<a class="glyphicon glyphicon-cog" href="#"></a>
+		<a class="glyphicon glyphicon-pause" href="#"></a>
+		<a class="glyphicon glyphicon-play" href="#"></a>
+		<a class="glyphicon glyphicon-stop" href="#"></a>
+		<a class="glyphicon glyphicon-step-forward" href="#"></a>
+	</nav>
+<textarea id="logconsole"></textarea>
+<embed id="app"
+       type="application/x-java-applet;version=1.7"
+       width="512" height="50"
+       archive="../../../build/libs/WebASM-1.0.jar, /home/zenzaro/.m2/repository/org/coreasm/org.coreasm.engine/1.6.5-SNAPSHOT/org.coreasm.engine-1.6.5-SNAPSHOT.jar"
+       code="org.coreasm.webasm.WebASM"
+       pluginspage="http://java.com/download/" />
+<textarea id="specification">
+CoreASM ExtremaFinding
+
+use Standard
+use TabBlocks
+use SchedulingPolicies
+
+//All processes are synchronized
+option SchedulingPolicies.policy allfirst
+
+enum STATES = {ACTIVE, INACTIVE}
+
+
+function mode : Agents -> STATES
+function rightMsg : Agents -> NUMBER
+function leftMsg : Agents -> NUMBER
+function id : Agents -> NUMBER
+function isLargest: Agents -> BOOLEAN
+function notified : Agents -> BOOLEAN
+
+function pos : Agents -> NUMBER
+
+derived N = 4
+derived processes = {a | a in Agents with pos(a) != undef}
+derived l(p) = pick proc in processes with pos(proc) = (pos(p)-1+N) % N
+derived r(p) = pick proc in processes with pos(proc) = (pos(p)+1) % N
+derived largerMsgReceived = rightMsg(self) > id(self) or leftMsg(self) > id(self)
+derived myMsgReceived  = rightMsg(self) = id(self) or leftMsg(self) = id(self)
+
+init InitiateState
+
+rule ExtremaFinding =
+
+	//Each process p will execute this rule with p=self.
+	//The forall synchronization will be implemented by
+	//the CoreASM scheduling policy "allfirst".
+
+	if mode(self) = ACTIVE then
+		if not isLargest(self) then
+			rightMsg(l(self)) := id(self)
+			leftMsg(r(self)) := id(self)
+		if largerMsgReceived then
+			mode(self) := INACTIVE
+		if myMsgReceived  then
+			isLargest(self):=true
+			notified(r(self)) := true
+
+	if mode(self) = INACTIVE then
+		if notified(self) then
+			notified(r(self)) := true
+		else
+			PassMsgs
+
+	if isLargest(self) and notified(self) then
+		print "Extrema found!!!"
+		StopASM
+
+rule PassMsgs =
+		rightMsg(l(self)) := rightMsg(self)
+		leftMsg(r(self)) := leftMsg(self)
+
+rule StopASM =
+	forall m in Agents do
+		program(m) := undef
+
+rule InitiateState =
+	//We will employ n,m to generate pairwise different integer numbers used
+	//as ids (for each process p) to implement the < relation.
+	choose m in {11,13,17} do
+		forall i in [0..(N-1)] do
+			extend Agents with p do
+				program(p) := @ExtremaFinding
+				pos(p) := i
+				id(p) := (i*113) % m
+				mode(p) := ACTIVE
+				notified(p) := false
+				isLargest(p) :=false
+				rightMsg(p) := undef
+				leftMsg(p) := undef
+	program(self):=undef
+
+</textarea>
+</div>
+<script>
+var editor = document.getElementById("specification");
+var myCodeMirror = CodeMirror(function(elt) {
+ 				 editor.parentNode.replaceChild(elt, editor);
+				}, {	value: editor.value,
+					lineNumbers: true,
+					theme: "webasm",
+					mode: "coreasm"
+					});
+</script>
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="js/jquery.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="js/bootstrap.min.js"></script>
 </body>
 </html>

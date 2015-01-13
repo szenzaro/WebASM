@@ -8,7 +8,7 @@ import  org.coreasm.engine.CoreASMEngine;
 import org.coreasm.engine.CoreASMEngineFactory;
 
 import java.applet.Applet;
-import java.awt.*;t
+import java.awt.*;
 
 public class WebASM extends Applet{
 
